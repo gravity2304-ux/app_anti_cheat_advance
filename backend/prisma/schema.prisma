@@ -1,0 +1,45 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+model Session {
+  id               String   @id @default(uuid())
+  studentId        String
+  resumeToken      String   @unique
+  startTime        DateTime @default(now())
+  status           String   @default("ACTIVE") // ACTIVE, SUSPENDED, COMPLETED
+  accessibilityMode Boolean @default(false)
+  riskScore        Float    @default(0.0)
+  events           ExamEvent[]
+  appeals          Appeal[]
+}
+
+model ExamEvent {
+  id           String   @id @default(uuid())
+  sessionId    String
+  clientSeqNo  Int      // Đảm bảo event đến đúng thứ tự
+  eventType    String   // Vd: TAB_SWITCH, DEVTOOLS, BLUR, PASTE
+  payload      String?  // JSON bổ sung
+  weight       Float    @default(0.0)
+  timestamp    DateTime
+  createdAt    DateTime @default(now())
+  
+  session      Session  @relation(fields: [sessionId], references: [id])
+  
+  @@unique([sessionId, clientSeqNo])
+}
+
+model Appeal {
+  id           String   @id @default(uuid())
+  sessionId    String
+  reason       String
+  status       String   @default("PENDING") // PENDING, APPROVED, REJECTED
+  createdAt    DateTime @default(now())
+
+  session      Session  @relation(fields: [sessionId], references: [id])
+}
